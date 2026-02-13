@@ -1,0 +1,10 @@
+.idea/
+.mvn/
+.terraform
+.vscode
+.terraform.lock.hcl
+main.tf 
+mvnw
+mvnw.cmd
+tfplan
+target/
