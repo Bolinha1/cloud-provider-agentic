@@ -1,4 +1,4 @@
-package com.iaexample.iaexamples.fuctions.terraform.model;
+package com.iaexample.iaexamples.fuctions.terraform.model.specs;
 
 public record SqsSpec(
         String name,

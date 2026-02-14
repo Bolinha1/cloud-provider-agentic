@@ -1,5 +1,7 @@
 package com.iaexample.iaexamples.fuctions.terraform.model;
 
+import com.iaexample.iaexamples.fuctions.terraform.model.specs.ResourceSpec;
+
 import java.util.List;
 import java.util.Map;
 

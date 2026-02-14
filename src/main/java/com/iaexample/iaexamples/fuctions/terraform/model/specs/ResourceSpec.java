@@ -1,4 +1,4 @@
-package com.iaexample.iaexamples.fuctions.terraform.model;
+package com.iaexample.iaexamples.fuctions.terraform.model.specs;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
