@@ -1,7 +1,6 @@
 package com.iaexample.iaexamples.fuctions.terraform;
 
 import com.iaexample.iaexamples.fuctions.terraform.model.TerraformResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
@@ -31,17 +30,10 @@ public class TerraformExecutor {
             Files.writeString(tfPath, tfCode);
 
 
-            // 3. Configurar variáveis de ambiente AWS
-            ProcessBuilder pb = new ProcessBuilder();
-            Map<String, String> envVars = new ProcessBuilder().environment();
-            envVars.put("AWS_ACCESS_KEY_ID", env.getProperty("aws_access_key_id"));
-            envVars.put("AWS_SECRET_ACCESS_KEY", env.getProperty("aws_secret_access_key"));
-            envVars.put("AWS_SECRET_ACCESS_KEY", env.getProperty("aws_secret_access_key"));
-            envVars.put("AWS_SESSION_TOKEN", "179424");
-
             // 3. Executar terraform init
             ProcessBuilder initPb = new ProcessBuilder("terraform", "init", "-no-color");
             initPb.directory(workDir.toFile());
+            configureAwsEnv(initPb);
             Process initProcess = initPb.start();
             int initCode = initProcess.waitFor();
 
@@ -53,7 +45,7 @@ public class TerraformExecutor {
             // 4. Executar terraform plan
             ProcessBuilder planPb = new ProcessBuilder("terraform", "plan", "-no-color", "-out=tfplan");
             planPb.directory(workDir.toFile());
-            planPb.environment().putAll(envVars);
+            configureAwsEnv(planPb);
             Process planProcess = planPb.start();
             String planOutput = readProcessOutput(planProcess.getInputStream());
             int planCode = planProcess.waitFor();
@@ -64,8 +56,9 @@ public class TerraformExecutor {
             }
 
             // 5. Executar terraform apply
-            ProcessBuilder applyPb = new ProcessBuilder("terraform", "apply", "-no-color", "tfplan");
+            ProcessBuilder applyPb = new ProcessBuilder("terraform", "apply", "-no-color", "-auto-approve", "tfplan");
             applyPb.directory(workDir.toFile());
+            configureAwsEnv(applyPb);
             Process applyProcess = applyPb.start();
             String applyOutput = readProcessOutput(applyProcess.getInputStream());
             int applyCode = applyProcess.waitFor();
@@ -79,6 +72,18 @@ public class TerraformExecutor {
 
         } catch (Exception e) {
             return new TerraformResponse("ERRO", tfCode, e.getMessage());
+        }
+    }
+
+    private void configureAwsEnv(ProcessBuilder pb) {
+        Map<String, String> environment = pb.environment();
+        String accessKey = env.getProperty("aws_access_key_id");
+        String secretKey = env.getProperty("aws_secret_access_key");
+        if (accessKey != null) {
+            environment.put("AWS_ACCESS_KEY_ID", accessKey.trim());
+        }
+        if (secretKey != null) {
+            environment.put("AWS_SECRET_ACCESS_KEY", secretKey.trim());
         }
     }
 
