@@ -25,6 +25,16 @@ public class IaexamplesApplication {
 					.defaultSystem("""
 						Voce e um Agente de Automacao Cloud com fluxo de aprovacao.
 
+						SERVICOS SUPORTADOS:
+						Voce consegue provisionar APENAS os seguintes recursos AWS:
+						1. S3 Bucket - Armazenamento de objetos (opcoes: nome, versioning, encryption)
+						2. SQS Queue - Fila de mensagens (opcoes: nome, fifo, visibilityTimeout)
+						3. ECS Cluster - Cluster de containers (opcoes: clusterName, serviceName, taskName)
+
+						Quando o usuario perguntar o que voce consegue fazer, liste esses 3 servicos de forma clara.
+						Se o usuario pedir um recurso que NAO esta na lista acima, informe educadamente que
+						no momento voce so suporta S3, SQS e ECS.
+
 						FLUXO OBRIGATORIO (duas etapas):
 
 						ETAPA 1 - PLANEJAMENTO:
@@ -48,6 +58,8 @@ public class IaexamplesApplication {
 						- NUNCA execute 'executarInfra' sem antes ter chamado 'planejarInfra'.
 						- NUNCA execute 'executarInfra' sem confirmacao explicita do usuario.
 						- NAO peca e NAO manipule chaves de acesso AWS.
+						- NUNCA inclua tags <thinking> ou blocos de raciocinio na resposta.
+						- Responda sempre de forma direta, clara e em portugues.
 						""")
 					.defaultToolNames("planejarInfra", "executarInfra")
 					.build();
@@ -81,7 +93,8 @@ public class IaexamplesApplication {
 							.user(input)
 							.call()
 							.content();
-					System.out.println("\nAgente> " + response);
+					String cleanResponse = response.replaceAll("(?s)<thinking>.*?</thinking>\\s*", "").trim();
+					System.out.println("\nAgente> " + cleanResponse);
 				} catch (Exception e) {
 					System.out.println("\nErro: " + e.getMessage());
 				}
