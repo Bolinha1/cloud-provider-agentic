@@ -1,6 +1,6 @@
 package com.iaexample.iaexamples.fuctions.terraform;
 
-import com.iaexample.iaexamples.fuctions.terraform.model.InfraPlan;
+import com.iaexample.iaexamples.fuctions.terraform.model.plans.InfraPlan;
 import com.iaexample.iaexamples.fuctions.terraform.model.specs.*;
 import org.springframework.stereotype.Component;
 

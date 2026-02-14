@@ -1,7 +1,11 @@
 package com.iaexample.iaexamples.fuctions.terraform;
 
-import com.iaexample.iaexamples.fuctions.terraform.model.*;
+import com.iaexample.iaexamples.fuctions.terraform.model.plans.InfraPlan;
+import com.iaexample.iaexamples.fuctions.terraform.model.plans.PlanResponse;
 import com.iaexample.iaexamples.fuctions.terraform.model.specs.*;
+import com.iaexample.iaexamples.fuctions.terraform.model.terraform.ExecuteRequest;
+import com.iaexample.iaexamples.fuctions.terraform.model.terraform.TerraformRequest;
+import com.iaexample.iaexamples.fuctions.terraform.model.terraform.TerraformResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

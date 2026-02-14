@@ -1,4 +1,4 @@
-package com.iaexample.iaexamples.fuctions.terraform.model;
+package com.iaexample.iaexamples.fuctions.terraform.model.plans;
 
 import com.iaexample.iaexamples.fuctions.terraform.model.specs.ResourceSpec;
 

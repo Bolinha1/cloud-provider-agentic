@@ -1,6 +1,6 @@
 package com.iaexample.iaexamples.fuctions.terraform;
 
-import com.iaexample.iaexamples.fuctions.terraform.model.TerraformResponse;
+import com.iaexample.iaexamples.fuctions.terraform.model.terraform.TerraformResponse;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
