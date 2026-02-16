@@ -7,5 +7,9 @@ main.tf
 mvnw
 mvnw.cmd
 tfplan
+terraform.tfstate*
 target/
 .env
+.claude/
+org/
+infra/

@@ -8,11 +8,11 @@
 		<version>3.5.10-SNAPSHOT</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.iaexample</groupId>
-	<artifactId>iaexamples</artifactId>
+	<groupId>com.cloudprovideragentic</groupId>
+	<artifactId>cloud-provider-agentic</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>iaexamples</name>
-	<description>Demo for spring boot AI</description>
+	<name>cloud-provider-agentic</name>
+	<description>Cloud Provider Agent - Automated AWS infrastructure provisioning with Terraform and AI</description>
 	<url/>
 	<licenses>
 		<license/>
