@@ -1,0 +1,20 @@
+services:
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cloud-provider-agentic
+    env_file:
+      - .env
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - SPRING_AI_BEDROCK_AWS_ACCESS_KEY=${AWS_ACCESS_KEY_ID}
+      - SPRING_AI_BEDROCK_AWS_SECRET_KEY=${AWS_SECRET_ACCESS_KEY}
+      - SPRING_AI_BEDROCK_AWS_REGION=${AWS_REGION}
+    volumes:
+      - ./infra:/app/infra:z
+    stdin_open: true
+    tty: true
