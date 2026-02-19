@@ -17,7 +17,7 @@ if [ ! -f .env ]; then
 fi
 
 # 1. Gerar o binário JAR
-echo "[1/3] Gerando JAR com Maven..."
+echo "[1/4] Gerando JAR com Maven..."
 ./mvnw clean package -DskipTests -B
 
 # 2. Verificar se o JAR foi gerado
@@ -26,16 +26,21 @@ if [ -z "$JAR_FILE" ]; then
   echo "Erro: JAR não encontrado em target/"
   exit 1
 fi
-echo "[2/3] JAR gerado: $JAR_FILE"
+echo "[2/4] JAR gerado: $JAR_FILE"
 
-# 3. Build da imagem e iniciar o app
-echo "[3/3] Subindo container Docker..."
+# 3. Limpar conteúdo da pasta infra/
+echo "[3/4] Limpando pasta infra/..."
+rm -f infra/*.tf infra/*.tfplan infra/.terraform.lock.hcl
+rm -rf infra/.terraform infra/tfplan
+
+# 4. Build da imagem e iniciar o app
+echo "[4/4] Subindo container Docker..."
 docker compose build
 
 echo ""
 echo "========================================="
 echo "  Iniciando o agente interativo..."
-echo "  Parar:  docker compose down"
+echo "  Parar:   docker compose down"
 echo "========================================="
 echo ""
 docker compose run --rm app
