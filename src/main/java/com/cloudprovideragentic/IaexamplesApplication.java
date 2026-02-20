@@ -2,6 +2,8 @@ package com.cloudprovideragentic;
 
 import com.cloudprovideragentic.fuctions.terraform.TerraformCodeHolder;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -24,7 +26,11 @@ public class IaexamplesApplication {
 
 		TerraformChatRunner(ChatClient.Builder builder, TerraformCodeHolder codeHolder) {
 			this.codeHolder = codeHolder;
+			MessageWindowChatMemory memory = MessageWindowChatMemory.builder()
+					.maxMessages(10)
+					.build();
 			this.chatClient = builder
+					.defaultAdvisors(MessageChatMemoryAdvisor.builder(memory).build())
 					.defaultSystem("""
 						Voce e um Agente de Automacao Cloud com fluxo de aprovacao.
 
