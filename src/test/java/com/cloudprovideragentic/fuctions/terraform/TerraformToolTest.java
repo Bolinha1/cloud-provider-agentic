@@ -1,10 +1,7 @@
 package com.cloudprovideragentic.fuctions.terraform;
 
-import com.cloudprovideragentic.fuctions.terraform.model.plans.InfraPlan;
 import com.cloudprovideragentic.fuctions.terraform.model.plans.PlanResponse;
-import com.cloudprovideragentic.fuctions.terraform.model.specs.EcsClusterSpec;
-import com.cloudprovideragentic.fuctions.terraform.model.specs.S3Spec;
-import com.cloudprovideragentic.fuctions.terraform.model.specs.SqsSpec;
+import com.cloudprovideragentic.fuctions.terraform.model.plans.TerraformPlanResult;
 import com.cloudprovideragentic.fuctions.terraform.model.terraform.ExecuteRequest;
 import com.cloudprovideragentic.fuctions.terraform.model.terraform.TerraformRequest;
 import com.cloudprovideragentic.fuctions.terraform.model.terraform.TerraformResponse;
@@ -16,8 +13,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,10 +23,7 @@ import static org.mockito.Mockito.*;
 class TerraformToolTest {
 
     @Mock
-    private InfraPlanService planService;
-
-    @Mock
-    private TerraformGenerator generator;
+    private TerraformCodeGeneratorService codeGenerator;
 
     @Mock
     private TerraformExecutor executor;
@@ -45,7 +37,7 @@ class TerraformToolTest {
     void setUp() {
         codeHolder = new TerraformCodeHolder();
         terraformTool = new TerraformTool();
-        planejarInfraFunction = terraformTool.planejarInfra(planService, generator, codeHolder);
+        planejarInfraFunction = terraformTool.planejarInfra(codeGenerator, codeHolder);
         executarInfraFunction = terraformTool.executarInfra(codeHolder, executor);
     }
 
@@ -56,123 +48,56 @@ class TerraformToolTest {
         @Test
         @DisplayName("Should generate plan and store Terraform code")
         void shouldGeneratePlanAndStoreCode() {
-            var s3 = new S3Spec("my-bucket", true, true);
-            var plan = new InfraPlan("us-east-1", List.of(s3), Map.of("env", "dev"));
             String tfCode = "resource \"aws_s3_bucket\" \"my-bucket\" {}";
+            String description = "Será criado: S3 bucket my-bucket com versionamento";
+            var planResult = new TerraformPlanResult(description, tfCode);
 
-            when(planService.gerarPlano(anyString())).thenReturn(plan);
-            when(generator.generate(plan)).thenReturn(tfCode);
+            when(codeGenerator.generate(anyString())).thenReturn(planResult);
 
             PlanResponse response = planejarInfraFunction.apply(new TerraformRequest("Criar bucket S3"));
 
             assertEquals("PLANO_GERADO", response.status());
             assertEquals(tfCode, response.terraformCode());
+            assertEquals(description, response.planDescription());
             assertTrue(codeHolder.hasPendingCode());
             assertEquals(tfCode, codeHolder.retrieve());
         }
 
         @Test
-        @DisplayName("Should include resource details in plan description")
-        void shouldIncludeResourceDetailsInPlanDescription() {
-            var s3 = new S3Spec("my-bucket", true, true);
-            var plan = new InfraPlan("us-east-1", List.of(s3), Map.of());
+        @DisplayName("Should pass user prompt to code generator")
+        void shouldPassUserPromptToCodeGenerator() {
+            String userPrompt = "Criar bucket S3 na regiao sa-east-1";
+            var planResult = new TerraformPlanResult("Descrição", "tf-code");
 
-            when(planService.gerarPlano(anyString())).thenReturn(plan);
-            when(generator.generate(plan)).thenReturn("tf-code");
+            when(codeGenerator.generate(anyString())).thenReturn(planResult);
 
-            PlanResponse response = planejarInfraFunction.apply(new TerraformRequest("Criar bucket"));
+            planejarInfraFunction.apply(new TerraformRequest(userPrompt));
 
-            assertTrue(response.planDescription().contains("S3 Bucket"));
-            assertTrue(response.planDescription().contains("my-bucket"));
+            verify(codeGenerator).generate(userPrompt);
         }
 
         @Test
-        @DisplayName("Should include SQS details in plan description")
-        void shouldIncludeSqsDetailsInPlanDescription() {
-            var sqs = new SqsSpec("my-queue", true, 60);
-            var plan = new InfraPlan("us-east-1", List.of(sqs), Map.of());
-
-            when(planService.gerarPlano(anyString())).thenReturn(plan);
-            when(generator.generate(plan)).thenReturn("tf-code");
-
-            PlanResponse response = planejarInfraFunction.apply(new TerraformRequest("Criar fila SQS"));
-
-            assertTrue(response.planDescription().contains("SQS Queue"));
-            assertTrue(response.planDescription().contains("my-queue"));
-            assertTrue(response.planDescription().contains("fifo=true"));
-            assertTrue(response.planDescription().contains("visibilityTimeout=60"));
-        }
-
-        @Test
-        @DisplayName("Should include ECS details in plan description")
-        void shouldIncludeEcsDetailsInPlanDescription() {
-            var ecs = new EcsClusterSpec("my-cluster", "my-svc", "my-task", 256, 512);
-            var plan = new InfraPlan("us-east-1", List.of(ecs), Map.of());
-
-            when(planService.gerarPlano(anyString())).thenReturn(plan);
-            when(generator.generate(plan)).thenReturn("tf-code");
-
-            PlanResponse response = planejarInfraFunction.apply(new TerraformRequest("Criar ECS cluster"));
-
-            assertTrue(response.planDescription().contains("ECS Cluster"));
-            assertTrue(response.planDescription().contains("my-cluster"));
-            assertTrue(response.planDescription().contains("service=my-svc"));
-            assertTrue(response.planDescription().contains("task=my-task"));
-        }
-
-        @Test
-        @DisplayName("Should include tags in plan description when present")
-        void shouldIncludeTagsInPlanDescription() {
-            var s3 = new S3Spec("bucket", true, true);
-            var plan = new InfraPlan("us-east-1", List.of(s3), Map.of("env", "prod"));
-
-            when(planService.gerarPlano(anyString())).thenReturn(plan);
-            when(generator.generate(plan)).thenReturn("tf-code");
-
-            PlanResponse response = planejarInfraFunction.apply(new TerraformRequest("Criar bucket"));
-
-            assertTrue(response.planDescription().contains("Tags:"));
-            assertTrue(response.planDescription().contains("env=prod"));
-        }
-
-        @Test
-        @DisplayName("Should not include tags section when tags are null")
-        void shouldNotIncludeTagsSectionWhenNull() {
-            var s3 = new S3Spec("bucket", true, true);
-            var plan = new InfraPlan("us-east-1", List.of(s3), null);
-
-            when(planService.gerarPlano(anyString())).thenReturn(plan);
-            when(generator.generate(plan)).thenReturn("tf-code");
-
-            PlanResponse response = planejarInfraFunction.apply(new TerraformRequest("Criar bucket"));
-
-            assertFalse(response.planDescription().contains("Tags:"));
-        }
-
-        @Test
-        @DisplayName("Should not include tags section when tags are empty")
-        void shouldNotIncludeTagsSectionWhenEmpty() {
-            var s3 = new S3Spec("bucket", true, true);
-            var plan = new InfraPlan("us-east-1", List.of(s3), Map.of());
-
-            when(planService.gerarPlano(anyString())).thenReturn(plan);
-            when(generator.generate(plan)).thenReturn("tf-code");
-
-            PlanResponse response = planejarInfraFunction.apply(new TerraformRequest("Criar bucket"));
-
-            assertFalse(response.planDescription().contains("Tags:"));
-        }
-
-        @Test
-        @DisplayName("Should return error response when plan generation fails")
-        void shouldReturnErrorWhenPlanGenerationFails() {
-            when(planService.gerarPlano(anyString()))
+        @DisplayName("Should return error response when code generation fails")
+        void shouldReturnErrorWhenCodeGenerationFails() {
+            when(codeGenerator.generate(anyString()))
                     .thenThrow(new RuntimeException("Connection failed"));
 
             PlanResponse response = planejarInfraFunction.apply(new TerraformRequest("Criar bucket"));
 
             assertEquals("ERRO", response.status());
             assertTrue(response.planDescription().contains("Connection failed"));
+            assertFalse(codeHolder.hasPendingCode());
+        }
+
+        @Test
+        @DisplayName("Should not include tags section when tags are null")
+        void shouldNotStoreCodeOnError() {
+            when(codeGenerator.generate(anyString()))
+                    .thenThrow(new RuntimeException("Model unavailable"));
+
+            planejarInfraFunction.apply(new TerraformRequest("Criar infra"));
+
+            assertFalse(codeHolder.hasPendingCode());
         }
     }
 

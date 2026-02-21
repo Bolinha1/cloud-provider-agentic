@@ -28,10 +28,7 @@ public class TerraformExecutor {
             Path workDir = fileManager.prepareInfraDirectory(tfCode);
 
             // 2. Executar terraform init
-            ProcessBuilder initPb = new ProcessBuilder("terraform", "init", "-no-color");
-            initPb.directory(workDir.toFile());
-            configureAwsEnv(initPb);
-            Process initProcess = initPb.start();
+            Process initProcess = buildProcess(workDir, "terraform", "init", "-no-color").start();
             int initCode = initProcess.waitFor();
 
             if (initCode != 0) {
@@ -40,11 +37,8 @@ public class TerraformExecutor {
             }
 
             // 3. Executar terraform plan
-            ProcessBuilder planPb = new ProcessBuilder("terraform", "plan", "-no-color", "-out=tfplan");
-            planPb.directory(workDir.toFile());
-            configureAwsEnv(planPb);
-            Process planProcess = planPb.start();
-            String planOutput = readProcessOutput(planProcess.getInputStream());
+            Process planProcess = buildProcess(workDir, "terraform", "plan", "-no-color", "-out=tfplan").start();
+            readProcessOutput(planProcess.getInputStream());
             int planCode = planProcess.waitFor();
 
             if (planCode != 0) {
@@ -53,10 +47,7 @@ public class TerraformExecutor {
             }
 
             // 4. Executar terraform apply
-            ProcessBuilder applyPb = new ProcessBuilder("terraform", "apply", "-no-color", "-auto-approve", "tfplan");
-            applyPb.directory(workDir.toFile());
-            configureAwsEnv(applyPb);
-            Process applyProcess = applyPb.start();
+            Process applyProcess = buildProcess(workDir, "terraform", "apply", "-no-color", "-auto-approve", "tfplan").start();
             String applyOutput = readProcessOutput(applyProcess.getInputStream());
             int applyCode = applyProcess.waitFor();
 
@@ -70,6 +61,13 @@ public class TerraformExecutor {
         } catch (Exception e) {
             return new TerraformResponse("ERRO", tfCode, e.getMessage());
         }
+    }
+
+    private ProcessBuilder buildProcess(Path workDir, String... command) {
+        ProcessBuilder pb = new ProcessBuilder(command);
+        pb.directory(workDir.toFile());
+        configureAwsEnv(pb);
+        return pb;
     }
 
     private void configureAwsEnv(ProcessBuilder pb) {
