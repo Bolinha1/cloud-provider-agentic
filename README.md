@@ -4,16 +4,19 @@ Cloud automation agent that provisions AWS infrastructure via Terraform using ar
 
 ## Supported Resources
 
-- **S3 Bucket** - Object storage (name, versioning, encryption)
-- **SQS Queue** - Message queue (name, fifo, visibilityTimeout)
-- **ECS Cluster** - Container cluster (clusterName, serviceName, taskName)
+The agent supports **any AWS resource** through LLM-based code generation. The following are explicitly covered in the system prompt with best practices:
+
+- **S3 Bucket** - Object storage (versioning, encryption, lifecycle policies)
+- **SQS Queue** - Message queue (FIFO, Dead Letter Queue, visibility timeout)
+- **ECS Cluster** - Container cluster with Fargate (service, task definition)
+- **SNS** - Notification service (topics, subscriptions)
 
 ## Prerequisites
 
 ### Running with Docker (recommended)
 
 - Docker and Docker Compose
-- AWS account with permissions to create S3, SQS and ECS resources
+- AWS account with permissions to create the desired resources
 - Access to Amazon Bedrock with the `amazon.nova-pro-v1:0` model enabled
 
 ### Running locally
@@ -21,7 +24,7 @@ Cloud automation agent that provisions AWS infrastructure via Terraform using ar
 - Java 21+
 - Maven 3.8+
 - Terraform CLI installed and available in PATH
-- AWS account with permissions to create S3, SQS and ECS resources
+- AWS account with permissions to create the desired resources
 - Access to Amazon Bedrock with the `amazon.nova-pro-v1:0` model enabled
 
 ## AWS Configuration
@@ -75,8 +78,9 @@ sh init.sh
 The script performs the following steps:
 1. Checks if the `.env` file exists
 2. Builds the JAR with Maven (`./mvnw clean package -DskipTests`)
-3. Builds the Docker image (Java 21 + Terraform CLI)
-4. Starts the container in interactive mode
+3. Cleans previous Terraform state files from `infra/`
+4. Builds the Docker image (Java 21 + Terraform 1.12.1)
+5. Starts the container in interactive mode
 
 To stop the container:
 
@@ -113,7 +117,7 @@ Você>
 
 ```
 Você> O que você consegue fazer?
-Agente> Eu consigo provisionar os seguintes recursos AWS: S3, SQS e ECS...
+Agente> Eu consigo provisionar os seguintes recursos AWS: S3, SQS, ECS...
 
 Você> Crie um bucket S3 chamado meu-bucket-dados
 Agente> [Shows the generated Terraform plan]
@@ -125,23 +129,30 @@ Agente> [Runs terraform init, plan and apply]
 
 To exit, type `sair` or `exit`.
 
+## How It Works
+
+The agent follows a two-stage approval workflow:
+
+1. **STAGE 1 — Plan (`planejarInfra` tool):** The LLM generates Terraform HCL code from the user's natural language request. The plan is shown for review before anything is applied.
+2. **STAGE 2 — Execute (`executarInfra` tool):** Upon user confirmation, runs `terraform init` → `terraform plan` → `terraform apply` against the generated code.
+
+The `infra/` directory is persisted (mounted as a Docker volume) so that Terraform state is maintained across executions, enabling incremental resource additions.
+
 ## Project Structure
 
 ```
 src/main/java/com/cloudprovideragentic/
-├── IaexamplesApplication.java            # Entry point and interactive chat
+├── IaexamplesApplication.java              # Entry point and interactive chat
 └── fuctions/terraform/
-    ├── TerraformTool.java                # Agent tool definitions (planejarInfra, executarInfra)
-    ├── InfraPlanService.java             # Infrastructure plan generation via LLM
-    ├── TerraformGenerator.java           # Terraform code generation from plan
-    ├── TerraformExecutor.java            # Terraform init/plan/apply execution
-    ├── TerraformCodeHolder.java          # Temporary storage for generated code
+    ├── TerraformTool.java                  # Agent tool definitions (planejarInfra, executarInfra)
+    ├── TerraformCodeGeneratorService.java  # Terraform code generation via LLM
+    ├── TerraformExecutor.java              # Terraform init/plan/apply execution
+    ├── TerraformCodeHolder.java            # Temporary storage for generated code
     ├── utils/
-    │   └── TerraformFileManager.java     # .tf file management on disk
+    │   └── TerraformFileManager.java       # .tf file management on disk
     └── model/
-        ├── specs/                        # Resource specifications (S3, SQS, ECS)
-        ├── plans/                        # Plan and response models
-        └── terraform/                    # Terraform request/response
+        ├── plans/                          # PlanResponse, TerraformPlanResult
+        └── terraform/                      # TerraformRequest, ExecuteRequest, TerraformResponse
 ```
 
 📚 Read more: See more information visit this article on Medium: [Spring AI e Tool Callings na construção de um agente provedor de infra](https://medium.com/@eduardo.borsato.oli/spring-ai-e-tool-callings-na-constru%C3%A7%C3%A3o-de-um-agente-provedor-de-infra-3acb87bffa82)
