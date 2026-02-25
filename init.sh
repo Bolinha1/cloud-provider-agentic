@@ -4,6 +4,11 @@ set -e
 echo "========================================="
 echo "  Cloud Provider Agentic - Init"
 echo "========================================="
+echo ""
+echo "  Banco de dados: PostgreSQL (chatmemory)"
+echo "  Tabela:         spring_ai_chat_memory"
+echo "  Inicialização:  postgres/init.sql"
+echo ""
 
 # 0. Verificar se .env existe
 if [ ! -f .env ]; then
@@ -33,10 +38,12 @@ echo "[3/4] Limpando pasta infra/..."
 rm -f infra/*.tf infra/*.tfplan infra/.terraform.lock.hcl
 rm -rf infra/.terraform infra/tfplan
 
-# 4. Build da imagem e iniciar o app
-echo "[4/4] Subindo container Docker..."
+# 4. Build das imagens
+echo "[4/5] Fazendo build das imagens Docker..."
 docker compose build
 
+# 5. Subir o Postgres e aguardar healthcheck, depois iniciar o app
+echo "[5/5] Subindo PostgreSQL e iniciando o agente..."
 echo ""
 echo "========================================="
 echo "  Iniciando o agente interativo..."

@@ -1,5 +1,23 @@
 services:
 
+  postgres:
+    image: postgres:16
+    container_name: cloud-provider-agentic-db
+    environment:
+      POSTGRES_DB: chatmemory
+      POSTGRES_USER: chatuser
+      POSTGRES_PASSWORD: chatpass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro,z
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatuser -d chatmemory"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   app:
     build:
       context: .
@@ -14,7 +32,16 @@ services:
       - SPRING_AI_BEDROCK_AWS_ACCESS_KEY=${AWS_ACCESS_KEY_ID}
       - SPRING_AI_BEDROCK_AWS_SECRET_KEY=${AWS_SECRET_ACCESS_KEY}
       - SPRING_AI_BEDROCK_AWS_REGION=${AWS_REGION}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/chatmemory
+      - SPRING_DATASOURCE_USERNAME=chatuser
+      - SPRING_DATASOURCE_PASSWORD=chatpass
+    depends_on:
+      postgres:
+        condition: service_healthy
     volumes:
       - ./infra:/app/infra:z
     stdin_open: true
     tty: true
+
+volumes:
+  postgres_data:
