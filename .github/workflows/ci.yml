@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   build-and-test:
     name: Build & Test (Java 21)
@@ -33,9 +37,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr create \
-            --title "$(git log -1 --pretty=%s)" \
-            --body "PR criado automaticamente após execução bem-sucedida do CI." \
-            --base main \
-            --head "${{ github.ref_name }}" \
-            || true
+          if gh pr list --head "${{ github.ref_name }}" --base main --json number --jq length | grep -q "^0$"; then
+            gh pr create \
+              --title "$(git log -1 --pretty=%s)" \
+              --body "PR criado automaticamente após execução bem-sucedida do CI." \
+              --base main \
+              --head "${{ github.ref_name }}"
+          else
+            echo "PR já existe para a branch ${{ github.ref_name }}, pulando criação."
+          fi
