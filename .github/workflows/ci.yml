@@ -27,3 +27,15 @@ jobs:
 
       - name: Test
         run: mvn test -B
+
+      - name: Create Pull Request
+        if: github.event_name == 'push' && github.ref != 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --title "$(git log -1 --pretty=%s)" \
+            --body "PR criado automaticamente após execução bem-sucedida do CI." \
+            --base main \
+            --head "${{ github.ref_name }}" \
+            || true
